@@ -65,6 +65,22 @@ public sealed class GeminiStreamingChatMessageContent : StreamingChatMessageCont
             metadata: metadata)
     {
         this.ToolCalls = toolCalls;
+
+        // Add StreamingFunctionCallUpdateContent items for each tool call for standard SK processing
+        if (this.ToolCalls is { Count: > 0 })
+        {
+            foreach (var toolCall in this.ToolCalls)
+            {
+                var arguments = toolCall.Arguments is not null
+                    ? System.Text.Json.JsonSerializer.Serialize(toolCall.Arguments)
+                    : null;
+
+                this.Items.Add(new StreamingFunctionCallUpdateContent(
+                    callId: toolCall.FullyQualifiedName,
+                    name: toolCall.FullyQualifiedName,
+                    arguments: arguments));
+            }
+        }
     }
 
     /// <summary>

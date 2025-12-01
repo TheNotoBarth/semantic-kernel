@@ -131,6 +131,29 @@ public sealed class GeminiChatMessageContent : ChatMessageContent
             metadata: metadata)
     {
         this.ToolCalls = functionsToolCalls?.Select(tool => new GeminiFunctionToolCall(tool)).ToList();
+
+        // Add FunctionCallContent items for each tool call for standard SK processing
+        if (this.ToolCalls is { Count: > 0 })
+        {
+            foreach (var toolCall in this.ToolCalls)
+            {
+                KernelArguments? arguments = null;
+                if (toolCall.Arguments is not null)
+                {
+                    arguments = [];
+                    foreach (var kvp in toolCall.Arguments)
+                    {
+                        arguments[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                this.Items.Add(new FunctionCallContent(
+                    functionName: toolCall.FunctionName,
+                    pluginName: toolCall.PluginName,
+                    id: toolCall.FullyQualifiedName,
+                    arguments: arguments));
+            }
+        }
     }
 
     /// <summary>

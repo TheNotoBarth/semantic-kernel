@@ -225,8 +225,40 @@ internal sealed class GeminiRequest
         ImageContent imageContent => CreateGeminiPartFromImage(imageContent),
         AudioContent audioContent => CreateGeminiPartFromAudio(audioContent),
         BinaryContent binaryContent => CreateGeminiPartFromBinary(binaryContent),
+        FunctionCallContent functionCallContent => CreateGeminiPartFromFunctionCall(functionCallContent),
+        FunctionResultContent functionResultContent => CreateGeminiPartFromFunctionResult(functionResultContent),
         _ => throw new NotSupportedException($"Unsupported content type. {item.GetType().Name} is not supported by Gemini.")
     };
+
+    private static GeminiPart CreateGeminiPartFromFunctionCall(FunctionCallContent functionCallContent)
+    {
+        return new GeminiPart
+        {
+            FunctionCall = new GeminiPart.FunctionCallPart
+            {
+                FunctionName = functionCallContent.PluginName is not null
+                    ? $"{functionCallContent.PluginName}-{functionCallContent.FunctionName}"
+                    : functionCallContent.FunctionName,
+                Arguments = functionCallContent.Arguments is not null
+                    ? JsonSerializer.SerializeToNode(functionCallContent.Arguments)
+                    : null
+            }
+        };
+    }
+
+    private static GeminiPart CreateGeminiPartFromFunctionResult(FunctionResultContent functionResultContent)
+    {
+        return new GeminiPart
+        {
+            FunctionResponse = new GeminiPart.FunctionResponsePart
+            {
+                FunctionName = functionResultContent.PluginName is not null
+                    ? $"{functionResultContent.PluginName}-{functionResultContent.FunctionName}"
+                    : functionResultContent.FunctionName ?? string.Empty,
+                Response = new(functionResultContent.Result)
+            }
+        };
+    }
 
     private static GeminiPart CreateGeminiPartFromImage(ImageContent imageContent)
     {
