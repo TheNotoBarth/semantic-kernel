@@ -540,7 +540,8 @@ internal sealed class GeminiRequest
             request.Configuration.ThinkingConfig = new GeminiRequestThinkingConfig
             {
                 ThinkingBudget = executionSettings.ThinkingConfig.ThinkingBudget,
-                ThinkingLevel = executionSettings.ThinkingConfig.ThinkingLevel
+                ThinkingLevel = executionSettings.ThinkingConfig.ThinkingLevel,
+                IncludeThoughts = executionSettings.ThinkingConfig.IncludeThoughts
             };
         }
     }
@@ -597,5 +598,9 @@ internal sealed class GeminiRequest
         [JsonPropertyName("thinkingLevel")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? ThinkingLevel { get; set; }
+
+        [JsonPropertyName("includeThoughts")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? IncludeThoughts { get; set; }
     }
 }

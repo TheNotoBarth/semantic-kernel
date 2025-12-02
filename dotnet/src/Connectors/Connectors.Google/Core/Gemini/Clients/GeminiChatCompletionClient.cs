@@ -748,19 +748,41 @@ internal sealed class GeminiChatCompletionClient : ClientBase
 
     private GeminiChatMessageContent GetChatMessageContentFromCandidate(GeminiResponse geminiResponse, GeminiResponseCandidate candidate)
     {
-        // Join text parts
-        string text = string.Concat(candidate.Content?.Parts?.Select(part => part.Text) ?? []);
+        // Separate thinking parts from regular text parts
+        var parts = candidate.Content?.Parts ?? [];
+        var textParts = parts.Where(part => part.Text is not null && part.Thought != true).ToList();
+        var thinkingParts = parts.Where(part => part.Text is not null && part.Thought == true).ToList();
+
+        // Join regular text parts
+        string text = string.Concat(textParts.Select(part => part.Text));
 
         // Gemini sometimes returns function calls with text parts, so collect them
-        var functionCallParts = candidate.Content?.Parts?
+        var functionCallParts = parts
             .Where(part => part.FunctionCall is not null).ToArray();
 
-        return new GeminiChatMessageContent(
+        var message = new GeminiChatMessageContent(
             role: candidate.Content?.Role ?? AuthorRole.Assistant,
             content: text,
             modelId: this._modelId,
             functionCallParts: functionCallParts,
             metadata: GetResponseMetadata(geminiResponse, candidate));
+
+        // Add thinking content as separate TextContent items with metadata
+        foreach (var thinkingPart in thinkingParts)
+        {
+            if (!string.IsNullOrEmpty(thinkingPart.Text))
+            {
+                message.Items.Add(new TextContent(
+                    text: thinkingPart.Text,
+                    modelId: this._modelId,
+                    metadata: new Dictionary<string, object?>
+                    {
+                        ["reasoning"] = true
+                    }));
+            }
+        }
+
+        return message;
     }
 
     private static GeminiRequest CreateRequest(
@@ -775,9 +797,11 @@ internal sealed class GeminiChatCompletionClient : ClientBase
 
     private GeminiStreamingChatMessageContent GetStreamingChatContentFromChatContent(GeminiChatMessageContent message)
     {
+        GeminiStreamingChatMessageContent streamingContent;
+
         if (message.CalledToolResult is not null)
         {
-            return new GeminiStreamingChatMessageContent(
+            streamingContent = new GeminiStreamingChatMessageContent(
                 role: message.Role,
                 content: message.Content,
                 modelId: this._modelId,
@@ -785,10 +809,9 @@ internal sealed class GeminiChatCompletionClient : ClientBase
                 metadata: message.Metadata,
                 choiceIndex: message.Metadata?.Index ?? 0);
         }
-
-        if (message.ToolCalls is not null)
+        else if (message.ToolCalls is not null)
         {
-            return new GeminiStreamingChatMessageContent(
+            streamingContent = new GeminiStreamingChatMessageContent(
                 role: message.Role,
                 content: message.Content,
                 modelId: this._modelId,
@@ -796,13 +819,31 @@ internal sealed class GeminiChatCompletionClient : ClientBase
                 metadata: message.Metadata,
                 choiceIndex: message.Metadata?.Index ?? 0);
         }
+        else
+        {
+            streamingContent = new GeminiStreamingChatMessageContent(
+                role: message.Role,
+                content: message.Content,
+                modelId: this._modelId,
+                choiceIndex: message.Metadata?.Index ?? 0,
+                metadata: message.Metadata);
+        }
 
-        return new GeminiStreamingChatMessageContent(
-            role: message.Role,
-            content: message.Content,
-            modelId: this._modelId,
-            choiceIndex: message.Metadata?.Index ?? 0,
-            metadata: message.Metadata);
+        // Copy thinking content items from message to streaming content
+        foreach (var item in message.Items)
+        {
+            if (item is TextContent textContent &&
+                textContent.Metadata?.TryGetValue("reasoning", out var reasoning) == true &&
+                reasoning is true)
+            {
+                streamingContent.Items.Add(new StreamingTextContent(
+                    text: textContent.Text,
+                    modelId: this._modelId,
+                    metadata: textContent.Metadata));
+            }
+        }
+
+        return streamingContent;
     }
 
     private static void ValidateAutoInvoke(bool autoInvoke, int resultsPerPrompt)

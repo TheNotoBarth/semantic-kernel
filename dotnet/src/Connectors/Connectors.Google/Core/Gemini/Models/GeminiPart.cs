@@ -57,6 +57,14 @@ internal sealed class GeminiPart : IJsonOnDeserialized
     public string? ThoughtSignature { get; set; }
 
     /// <summary>
+    /// Indicates whether this part contains thinking/reasoning content.
+    /// When true, the text contains the model's internal reasoning process summary.
+    /// </summary>
+    [JsonPropertyName("thought")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Thought { get; set; }
+
+    /// <summary>
     /// Checks whether only one property of the GeminiPart instance is not null.
     /// Returns true if only one property among Text, InlineData, FileData, FunctionCall, and FunctionResponse is not null,
     /// Otherwise, it returns false.

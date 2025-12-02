@@ -32,6 +32,15 @@ public class GeminiThinkingConfig
     public string? ThinkingLevel { get; set; }
 
     /// <summary>
+    /// Whether to include thinking summary in the response.
+    /// When set to true, the response will contain parts with "thought" set to true,
+    /// which represent the model's internal reasoning process.
+    /// </summary>
+    [JsonPropertyName("include_thoughts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IncludeThoughts { get; set; }
+
+    /// <summary>
     /// Clones this instance.
     /// </summary>
     /// <returns></returns>
