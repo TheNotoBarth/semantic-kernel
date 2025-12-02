@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
@@ -28,12 +29,14 @@ public sealed class GoogleAIGeminiChatCompletionService : IChatCompletionService
     /// <param name="apiVersion">Version of the Google API</param>
     /// <param name="httpClient">Optional HTTP client to be used for communication with the Gemini API.</param>
     /// <param name="loggerFactory">Optional logger factory to be used for logging.</param>
+    /// <param name="customEndpoint">Custom endpoint URL (optional). If provided, this will be used instead of the default Google AI endpoint.</param>
     public GoogleAIGeminiChatCompletionService(
         string modelId,
         string apiKey,
         GoogleAIVersion apiVersion = GoogleAIVersion.V1_Beta, // todo: change beta to stable when stable version will be available
         HttpClient? httpClient = null,
-        ILoggerFactory? loggerFactory = null)
+        ILoggerFactory? loggerFactory = null,
+        Uri? customEndpoint = null)
     {
         Verify.NotNullOrWhiteSpace(modelId);
         Verify.NotNullOrWhiteSpace(apiKey);
@@ -45,7 +48,8 @@ public sealed class GoogleAIGeminiChatCompletionService : IChatCompletionService
             modelId: modelId,
             apiKey: apiKey,
             apiVersion: apiVersion,
-            logger: loggerFactory?.CreateLogger(typeof(GoogleAIGeminiChatCompletionService)));
+            logger: loggerFactory?.CreateLogger(typeof(GoogleAIGeminiChatCompletionService)),
+            customEndpoint: customEndpoint);
         this._attributesInternal.Add(AIServiceExtensions.ModelIdKey, modelId);
     }
 
