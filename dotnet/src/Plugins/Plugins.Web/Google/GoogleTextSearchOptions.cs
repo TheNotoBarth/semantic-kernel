@@ -16,12 +16,12 @@ public sealed class GoogleTextSearchOptions
     public ILoggerFactory? LoggerFactory { get; init; } = null;
 
     /// <summary>
-    /// <see cref="ITextSearchStringMapper" /> instance that can map a <see cref="global::Google.Apis.CustomSearchAPI.v1.Data.Result"/> to a <see cref="string"/>
+    /// <see cref="ITextSearchStringMapper" /> instance that can map a Google search result to a <see cref="string"/>
     /// </summary>
     public ITextSearchStringMapper? StringMapper { get; init; } = null;
 
     /// <summary>
-    /// <see cref="ITextSearchResultMapper" /> instance that can map a <see cref="global::Google.Apis.CustomSearchAPI.v1.Data.Result"/> to a <see cref="TextSearchResult"/>
+    /// <see cref="ITextSearchResultMapper" /> instance that can map a Google search result to a <see cref="TextSearchResult"/>
     /// </summary>
     public ITextSearchResultMapper? ResultMapper { get; init; } = null;
 }
