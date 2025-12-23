@@ -69,8 +69,9 @@ public sealed class GeminiStreamingChatMessageContent : StreamingChatMessageCont
         // Add StreamingFunctionCallUpdateContent items for each tool call for standard SK processing
         if (this.ToolCalls is { Count: > 0 })
         {
-            foreach (var toolCall in this.ToolCalls)
+            for (int i = 0; i < this.ToolCalls.Count; i++)
             {
+                var toolCall = this.ToolCalls[i];
                 var arguments = toolCall.Arguments is not null
                     ? System.Text.Json.JsonSerializer.Serialize(toolCall.Arguments)
                     : null;
@@ -88,8 +89,10 @@ public sealed class GeminiStreamingChatMessageContent : StreamingChatMessageCont
                 this.Items.Add(new StreamingFunctionCallUpdateContent(
                     callId: toolCall.FullyQualifiedName,
                     name: toolCall.FullyQualifiedName,
-                    arguments: arguments)
+                    arguments: arguments,
+                    functionCallIndex: i)
                 {
+                    RequestIndex = this.ChoiceIndex,
                     Metadata = functionCallMetadata
                 });
             }
