@@ -353,6 +353,7 @@ internal sealed class GeminiChatCompletionClient : ClientBase
     {
         var chatResponsesEnumerable = this.ProcessChatResponseStreamAsync(responseStream, ct: ct);
         IAsyncEnumerator<GeminiChatMessageContent> chatResponsesEnumerator = null!;
+        int functionRequestIndex = 0;
         try
         {
             chatResponsesEnumerator = chatResponsesEnumerable.GetAsyncEnumerator(ct);
@@ -367,10 +368,10 @@ internal sealed class GeminiChatCompletionClient : ClientBase
                         // This scenario should not happen but I leave it as a precaution
                         state.AutoInvoke = false;
                         // We return the first message
-                        yield return this.GetStreamingChatContentFromChatContent(messageContent);
+                        yield return this.GetStreamingChatContentFromChatContent(messageContent, ref functionRequestIndex);
                         // We return the second message
                         messageContent = chatResponsesEnumerator.Current;
-                        yield return this.GetStreamingChatContentFromChatContent(messageContent);
+                        yield return this.GetStreamingChatContentFromChatContent(messageContent, ref functionRequestIndex);
                         continue;
                     }
 
@@ -380,14 +381,14 @@ internal sealed class GeminiChatCompletionClient : ClientBase
                     // Yield the message also if it contains text
                     if (!string.IsNullOrWhiteSpace(messageContent.Content))
                     {
-                        yield return this.GetStreamingChatContentFromChatContent(messageContent);
+                        yield return this.GetStreamingChatContentFromChatContent(messageContent, ref functionRequestIndex);
                     }
 
                     yield break;
                 }
 
                 // If we don't want to attempt to invoke any functions, just return the result.
-                yield return this.GetStreamingChatContentFromChatContent(messageContent);
+                yield return this.GetStreamingChatContentFromChatContent(messageContent, ref functionRequestIndex);
             }
         }
         finally
@@ -798,7 +799,7 @@ internal sealed class GeminiChatCompletionClient : ClientBase
         return geminiRequest;
     }
 
-    private GeminiStreamingChatMessageContent GetStreamingChatContentFromChatContent(GeminiChatMessageContent message)
+    private GeminiStreamingChatMessageContent GetStreamingChatContentFromChatContent(GeminiChatMessageContent message, ref int functionRequestIndex)
     {
         GeminiStreamingChatMessageContent streamingContent;
 
@@ -820,7 +821,8 @@ internal sealed class GeminiChatCompletionClient : ClientBase
                 modelId: this._modelId,
                 toolCalls: message.ToolCalls,
                 metadata: message.Metadata,
-                choiceIndex: message.Metadata?.Index ?? 0);
+                choiceIndex: message.Metadata?.Index ?? 0,
+                globalChoiceIndex: ref functionRequestIndex);
         }
         else
         {

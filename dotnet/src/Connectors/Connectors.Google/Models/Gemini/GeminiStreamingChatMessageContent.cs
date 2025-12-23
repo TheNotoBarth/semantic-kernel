@@ -48,12 +48,14 @@ public sealed class GeminiStreamingChatMessageContent : StreamingChatMessageCont
     /// <param name="choiceIndex">Choice index</param>
     /// <param name="toolCalls">Tool calls returned by model</param>
     /// <param name="metadata">Additional metadata</param>
+    /// <param name="globalChoiceIndex">The index of function call</param>
     internal GeminiStreamingChatMessageContent(
         AuthorRole role,
         string? content,
         string modelId,
         int choiceIndex,
         IReadOnlyList<GeminiFunctionToolCall>? toolCalls,
+        ref int globalChoiceIndex,
         GeminiMetadata? metadata = null)
         : base(
             role: role,
@@ -92,7 +94,7 @@ public sealed class GeminiStreamingChatMessageContent : StreamingChatMessageCont
                     arguments: arguments,
                     functionCallIndex: i)
                 {
-                    RequestIndex = this.ChoiceIndex,
+                    RequestIndex = globalChoiceIndex++,
                     Metadata = functionCallMetadata
                 });
             }

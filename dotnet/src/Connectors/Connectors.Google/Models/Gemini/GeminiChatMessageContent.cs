@@ -135,8 +135,9 @@ public sealed class GeminiChatMessageContent : ChatMessageContent
         // Add FunctionCallContent items for each tool call for standard SK processing
         if (this.ToolCalls is { Count: > 0 })
         {
-            foreach (var toolCall in this.ToolCalls)
+            for (int i = 0; i < this.ToolCalls.Count; i++)
             {
+                var toolCall = this.ToolCalls[i];
                 KernelArguments? arguments = null;
                 if (toolCall.Arguments is not null)
                 {
@@ -162,10 +163,11 @@ public sealed class GeminiChatMessageContent : ChatMessageContent
                     pluginName: toolCall.PluginName,
                     id: toolCall.FullyQualifiedName,
                     arguments: arguments)
-                    {
-                        Metadata = functionCallMetadata
-                    }
-                );
+                {
+                    RequestIndex = (this.Metadata?.Index ?? 0) + i,
+                    FunctionCallIndex = i,
+                    Metadata = functionCallMetadata
+                });
             }
         }
     }

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -42,6 +43,17 @@ public sealed class FunctionCallContent : KernelContent
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Exception? Exception { get; init; }
+
+    /// <summary>
+    /// The function call index.
+    /// </summary>
+    public int FunctionCallIndex { get; init; }
+
+    /// <summary>
+    /// Index of the request that produced this function call content.
+    /// </summary>
+    [Experimental("SKEXP0001")]
+    public int RequestIndex { get; init; } = 0;
 
     /// <summary>
     /// Creates a new instance of the <see cref="FunctionCallContent"/> class.
